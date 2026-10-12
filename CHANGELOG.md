@@ -12,44 +12,25 @@ the notes of the version's GitHub Release.
 
 ### Added
 
-- A working example of scene triggers, scene actions and dashboard widgets
-  (Gladys 5.1.0 or later).
-- `CHANGELOG.md`, rolled by the Release workflow.
-- A GitHub Release for every version, with its changelog section as notes: the
-  Gladys Supervision page links each version to the repository's releases.
-- CI runs the tests on Node 22 and 24, and builds the Docker image.
-- Dependabot keeps the npm dependencies and the GitHub Actions up to date.
-- `SECURITY.md` (how to report a vulnerability) and `CLAUDE.md` (project rules
-  for contributors and coding assistants).
-- Manifest tests: `version` matches `package.json`, `docker_image` is tagged
-  with it, descriptions hold 10 to 100 characters, placeholders are
-  multi-language objects.
-- The latitude and longitude fields show an example value as placeholder.
+- A calendar device per country, for the dashboard and scene conditions: holiday today and tomorrow,
+  workday today and tomorrow, French school holidays today and tomorrow, days until the next holiday
+  and the next workday, name of the next holiday, and a "Today" summary. Values switch at midnight in
+  the time zone of Gladys and are sent again every day.
+- Public holidays of about 200 countries and their subdivisions (Alsace-Moselle, German states, Swiss
+  cantons, Canadian provinces, US states…), computed offline with date-holidays; public holidays only
+  by default, bank holidays, local school days off, optional days and observances on demand.
+- Workdays: the days of the week to choose, extra days off (bridges, closures) and holidays worked (by
+  date, day of the year or name in any language, such as Whit Monday for the solidarity day).
+- French school holidays of zones A, B, C, Corsica, Guadeloupe, French Guiana, Martinique, Mayotte,
+  Réunion and Saint Pierre and Miquelon, read once a day from data.education.gouv.fr and kept for
+  offline use.
+- Scene triggers at the hour of your choice: Holiday, Day before a holiday, School holidays start,
+  Last day of the school holidays, with the names and dates as variables.
+- Scene action "Check a date": workday, holiday and school holidays for today, tomorrow or any day of
+  the coming year.
+- Dashboard widget "Upcoming holidays".
+- "Check the configuration" button: the calendar in use, the next holiday, the school holidays read,
+  what to fix and the subdivision codes of the country.
+- Texts and documentation in English, French, German and Spanish.
 
-### Changed
-
-- Node.js 22 or later is required (Node 20 is end-of-life).
-- Integration SDK 0.15.0. The tests now run against the fake Gladys of the
-  SDK, which refuses the payloads Gladys refuses.
-- The refresh interval is one minute minimum, the fastest Gladys polls a
-  device. The plug's power is only sent when it changes, and every 30
-  minutes otherwise.
-
-### Fixed
-
-- Gladys refused the devices of the Discovery tab: the weather station and
-  the plug declared their poll frequency in seconds instead of one of the
-  values Gladys accepts, and were never polled. They now poll every minute,
-  and the readings follow the refresh interval of the configuration.
-
-- The release commit no longer fails `npm run format:check`: the Release
-  workflow updates the manifest `version` and `docker_image` in place instead
-  of re-printing the whole file with `jq`.
-- The integration can write to `/data`: the image creates the directory owned
-  by the `node` user, a new Docker volume was owned by root.
-- A sub-container running the integration's own image follows it to the new
-  tag at each release, as well as in the manifest of the build summary: it kept
-  the previous tag, which may not exist on the registry. Sub-containers on a
-  third-party image (a broker, a database...) keep theirs.
-
-[Unreleased]: https://github.com/GladysAssistant/integration-template-js/commits/main
+[Unreleased]: https://github.com/guim31/gladys-holidays/commits/main

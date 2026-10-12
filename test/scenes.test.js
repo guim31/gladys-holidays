@@ -1,93 +1,61 @@
+// -----------------------------------------------------------------------------
+// The "Check a date" scene action: today, tomorrow or a day of the coming
+// year. Yes/no answers are numbers (1, 0, -1 unknown), the only values the
+// "Only continue if" condition of Gladys can compare with what a user types.
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import { DEVICE_BLUEPRINTS } from '../src/devices/index.js';
-import { MOTION_DETECTED_TRIGGER, motionSensor } from '../src/devices/motionSensor.js';
-import { SCENE_ACTIONS } from '../src/scenes.js';
-import { normalizeConfig } from '../src/config.js';
+import { createWorld } from './helpers/world.js';
 
-const manifest = JSON.parse(
-  await readFile(new URL('../gladys-assistant-integration.json', import.meta.url), 'utf8'),
-);
-const config = normalizeConfig();
+const check = async (world, fields) => {
+  const ack = await world.gladys.fake.sceneAction('check_date', fields);
+  assert.equal(ack.success, true, ack.error);
+  return ack.data.outputs;
+};
 
-const declarationOf = (list, key) => manifest[list].find((entry) => entry.key === key);
-const keysOf = (list) => (list ?? []).map((entry) => entry.key);
-const deviceIdOf = (gladys, key) =>
-  DEVICE_BLUEPRINTS.find((bp) => bp.key === key).deviceExternalId(gladys);
-
-// Let the async interval callback run to completion.
-const flush = () => new Promise((resolve) => setImmediate(resolve));
-
-test('the motion sensor fires one motion_detected event per detection, none on the clear', async (t) => {
-  t.mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
-  const gladys = createFakeGladys();
-  const stopPush = motionSensor.startPush(gladys, config);
-  try {
-    t.mock.timers.tick(60_000);
-    await flush();
-    assert.equal(gladys.fake.sceneEvents.length, 1, 'one detection, one event');
-    assert.equal(gladys.fake.sceneEvents[0].key, MOTION_DETECTED_TRIGGER);
-    assert.equal(gladys.fake.states.at(-1).state, 1, 'the state is still published');
-
-    t.mock.timers.tick(10_000);
-    await flush();
-    assert.equal(gladys.fake.states.at(-1).state, 0, 'the detection is cleared');
-    assert.equal(gladys.fake.sceneEvents.length, 1, 'the clear fires no event');
-  } finally {
-    stopPush();
-  }
-});
-
-test('motion_detected data only carries keys the trigger declares', async (t) => {
-  t.mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
-  const gladys = createFakeGladys();
-  const stopPush = motionSensor.startPush(gladys, config);
-  try {
-    t.mock.timers.tick(60_000);
-    await flush();
-  } finally {
-    stopPush();
-  }
-  const [{ data }] = gladys.fake.sceneEvents;
-  const trigger = declarationOf('scene_triggers', MOTION_DETECTED_TRIGGER);
-  // The core keeps the `fields` keys (filters) and the `variables` keys
-  // (exposed to the scene): any other key would be silently dropped.
-  const declared = [...keysOf(trigger.fields), ...keysOf(trigger.variables)];
-  for (const [key, value] of Object.entries(data)) {
-    assert.ok(declared.includes(key), `data.${key} is not declared, the core would drop it`);
-    assert.ok(value === null || typeof value !== 'object', `data.${key} must be a primitive`);
-  }
-  // A `"source": "devices"` filter stores a device external_id.
-  assert.equal(data.device, deviceIdOf(gladys, 'motion-sensor'));
-  const targets = trigger.fields.find((field) => field.key === 'target').options;
-  assert.ok(
-    targets.some((option) => option.value === data.target),
-    `data.target "${data.target}" must be one of the filter options`,
-  );
-});
-
-test('identify_device signals the chosen device and returns the declared outputs', async () => {
-  const gladys = createFakeGladys();
-  const outputs = await SCENE_ACTIONS.identify_device(gladys, {
-    fields: { device: deviceIdOf(gladys, 'light') },
-    config,
+test('today, tomorrow, in N days', async (t) => {
+  const world = await createWorld({
+    config: { country: 'FR', subdivision: '67', school_zone: 'zone_b', language: 'fr' },
+    at: '2026-12-24T07:00:00Z',
   });
-  assert.deepEqual(outputs, { signalled: true });
-  const declared = keysOf(declarationOf('scene_actions', 'identify_device').outputs);
-  for (const key of Object.keys(outputs)) {
-    assert.ok(declared.includes(key), `output "${key}" is not declared, the core would drop it`);
-  }
+  t.after(() => world.app.stop());
+  assert.deepEqual(await check(world, { days_ahead: 0 }), {
+    date: '2026-12-24',
+    is_workday: 1,
+    is_holiday: 0,
+    holiday_name: '',
+    is_school_holiday: 1,
+    school_holiday_name: 'Vacances de Noël',
+  });
+  assert.deepEqual(await check(world, { days_ahead: 2 }), {
+    date: '2026-12-26',
+    is_workday: 0,
+    is_holiday: 1,
+    holiday_name: 'Lendemain de Noël', // Alsace-Moselle
+    is_school_holiday: 1,
+    school_holiday_name: 'Vacances de Noël',
+  });
+  const back = await check(world, { days_ahead: 11 });
+  assert.equal(back.date, '2027-01-04');
+  assert.equal(back.is_school_holiday, 0);
 });
 
-test('identify_device reports a device that cannot signal itself through its output', async () => {
-  // Not a failure: a scene action is never a condition, the scene author
-  // gates the following actions on the output instead.
-  const gladys = createFakeGladys();
-  const outputs = await SCENE_ACTIONS.identify_device(gladys, {
-    fields: { device: deviceIdOf(gladys, 'weather-station') },
-    config,
-  });
-  assert.deepEqual(outputs, { signalled: false });
+test('beyond the published school calendar, or without a zone: -1, unknown', async (t) => {
+  const world = await createWorld({ config: { country: 'FR', school_zone: 'corse' } });
+  t.after(() => world.app.stop());
+  // The Corsican calendar is published until May 2027.
+  assert.equal((await check(world, { days_ahead: 300 })).is_school_holiday, -1);
+  const noZone = await createWorld({ config: { country: 'FR' } });
+  t.after(() => noZone.app.stop());
+  assert.equal((await check(noZone, { days_ahead: 0 })).is_school_holiday, -1);
+});
+
+test('the offset is bounded to the coming year and defaults to today', async (t) => {
+  const world = await createWorld({ config: { country: 'FR' }, at: '2026-10-12T10:00:00Z' });
+  t.after(() => world.app.stop());
+  assert.equal((await check(world, {})).date, '2026-10-12');
+  assert.equal((await check(world, { days_ahead: 5000 })).date, '2027-10-13');
+  assert.equal((await check(world, { days_ahead: -3 })).date, '2026-10-12');
+  assert.equal((await check(world, { days_ahead: 'x' })).date, '2026-10-12');
 });
