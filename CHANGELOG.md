@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-12
+
 ### Added
 
 - A calendar device per country, for the dashboard and scene conditions: holiday today and tomorrow,
@@ -34,4 +36,5 @@ the notes of the version's GitHub Release.
 - Texts and documentation in English, French, German and Spanish; device and feature names in
   French by default.
 
-[Unreleased]: https://github.com/guim31/gladys-holidays/commits/main
+[Unreleased]: https://github.com/guim31/gladys-holidays/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-holidays/releases/tag/v1.0.0
