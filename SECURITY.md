@@ -30,6 +30,14 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration stores and exchanges:
+
+- `/data/school-holidays.json`: the school holidays of the chosen zone (public dates), and
+  `/data/scheduler.json`: the last hour whose scene triggers were fired. Nothing personal, no secret:
+  the integration asks for no account, no password and no API key.
+- Network: holidays are computed locally. Only when a French school zone is chosen, one HTTPS request a
+  day at most goes to `data.education.gouv.fr`, without any identifier.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+the date-holidays library and the open data of the French Education ministry.

@@ -8,20 +8,23 @@ contributors.
 A Gladys Assistant **external integration**: a Node.js service (Node 22+, ESM,
 no build step) that runs in its own sandboxed Docker container and talks to
 Gladys through
-[`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js),
-its only runtime dependency. It started from the official JavaScript template.
+[`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js).
+Its other runtime dependency is
+[`date-holidays`](https://github.com/commenthol/date-holidays), which computes
+the holidays offline. It started from the official JavaScript template.
 
 ## Commands
 
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/holidays.test.js         # one file
+node --test --test-name-pattern "Bavaria" # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
-npx github:GladysAssistant/integration-store .   # store admission checks
+npx -y github:GladysAssistant/integration-store --skip-image-check .   # store admission checks
+node scripts/countries.mjs                # country options of the manifest, from date-holidays
 ```
 
 The CI (`.github/workflows/ci.yml`) runs `format:check`, `lint` and `test` on
@@ -31,16 +34,23 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the service; "Check the configuration" report
+src/service.js                    the clock (minute ticks): states at midnight, scene triggers per hour, status
+src/holidays.js                   date-holidays -> calendar days; workdays, extra days, holidays worked
+src/school.js                     French school holidays: API request, parsing, daily cache in /data
+src/device.js                     the calendar device (one per country) and its states
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
 src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/i18n.js                       every text of the code, en/fr/de/es
+src/dates.js                      'YYYY-MM-DD' arithmetic, local date and hour in a time zone
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js                      JSON files in /data (HOLIDAYS_DATA_DIR locally)
+scripts/countries.mjs             prints the country options of the manifest
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+test/fixtures/education/          answers of data.education.gouv.fr recorded on 2026-10-12
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +80,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget texts, feature names, manifest texts, and `docs/en.md`,
+  `docs/fr.md`, `docs/de.md`, `docs/es.md` with the same sections, kept in
+  sync. `test/i18n.test.js` checks it.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -153,8 +165,9 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 **Widgets, déclencheurs, actions de scène (SDK ≥ 0.14, Gladys ≥ 5.1)**
 
 - **Cibler la dernière version publiée du cœur, pas `master`** : la spec de `master` décrit des
-  fonctions non publiées. Les boutons de widget qui ouvrent un formulaire (#3168, commit 3feb2cf8)
-  sont absents de la 5.1.4 : le bouton s'affiche et n'envoie rien. Vérifier par `git tag --contains`.
+  fonctions non publiées. La dernière version publiée est la **5.2.0** (12/10/2026). Les boutons de
+  widget qui ouvrent un formulaire (#3168) sont absents de la 5.1.4 : le bouton s'affiche et n'envoie
+  rien. Vérifier par `git tag --contains` ou `git show v5.2.0:<chemin>`.
 
 - Un réglage de widget ne propose en liste que les **appareils** de l'intégration
   (`source: "devices"`, seule source dynamique).
@@ -200,5 +213,69 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 Tout texte montré à l'utilisateur existe en **`en`, `fr`, `de` et `es`** : manifeste, contenu des widgets, messages,
 noms de fonctionnalités. L'allemand **tutoie** (« du »), l'espagnol **vouvoie** (« usted ») : décision de Guilhem,
 appliquée à ses 21 intégrations. `test/i18n.test.js` doit échouer sur une langue manquante, un texte vide ou trop
-long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store ne publie que `docs/en.md` et `docs/fr.md`
-(`DOCS_LANGUAGES` d'integration-store) : pas de doc de/es.
+long, et sur un « Sie »/« Ihr… » de politesse en allemand (y compris dans `docs/de.md` : « Sie » au sens de « ils »
+est refusé aussi, tourner la phrase autrement). Le store publie `docs/en.md` et `docs/fr.md` (obligatoires) et aussi
+`docs/de.md` et `docs/es.md` quand ils existent (`DOCS_OPTIONAL_LANGUAGES` d'integration-store) : les quatre docs
+sont écrites, avec les mêmes sections.
+
+## Pièges découverts sur cette intégration (Holidays & Workdays)
+
+**Cœur Gladys (vérifié dans v5.2.0)**
+
+- **« Condition sur variables » compare strictement** (`compare` : `===`), et la valeur saisie est
+  enregistrée en nombre si elle en a l'air, sinon en texte. Une sortie d'action de scène de type
+  `boolean` ne peut donc **jamais** être égale à ce que l'utilisateur tape : les oui/non sont des
+  sorties `number` (1, 0, et -1 pour inconnu).
+- Le libellé générique d'un type remplace le nom publié quand aucune autre fonctionnalité de
+  l'appareil n'a **le même `type`** (`shouldDisplayDeviceName` du front compare le `type` seul, pas la
+  catégorie). Un `text/text` seul s'affiche « Texte » : d'où deux `text/text` et deux
+  `duration/integer` ici. `test/gladys-rules.test.js` le vérifie.
+- Une valeur de plus de **48 h** s'affiche « Pas de valeur récente » : republier chaque jour même
+  inchangé (`forgetPublishedStates()` puis `publishChangedStates`).
+- Les filtres des déclencheurs ne font que l'égalité : pour « à l'heure choisie », le déclencheur
+  porte un champ `hour` **`number` obligatoire** et l'intégration émet l'événement à chaque heure des
+  jours concernés (une heure sautée au printemps ne part pas, l'heure répétée à l'automne part une
+  fois). Un `select` de 24 heures coûtait 24 options × 4 langues par déclencheur dans le manifeste.
+- Une `date` `'YYYY-MM-DD'` d'un élément de `card-list` s'affiche comme un jour du calendrier, sans
+  décalage de fuseau (`CALENDAR_DATE_REGEX` du front, depuis 5.1.0) ; une date-heure s'affiche avec
+  l'heure.
+- Déclarer `transports: ["local", "cloud"]` fait afficher l'interrupteur « Préférer la connexion
+  locale » sur la page de configuration, même quand il n'a pas de sens. Décision de Guilhem
+  (12/10/2026) : `["local"]` seul ici, les vacances scolaires restant une option qui lit l'open data
+  une fois par jour (dit dans la doc).
+- Le type `calendar` (5.2.0) pousserait des événements dans le calendrier de Gladys, mais il est
+  **par utilisateur** et exclut les appareils : les conditions de scène sur un appareil (usage
+  principal) imposent le type `device`.
+
+**Store**
+
+- Le manifeste est **plafonné à 100 Ko** (`MANIFEST_MAX_BYTES` d'integration-store) : une liste de
+  ~200 pays en quatre langues en prend déjà une trentaine. Garder les petits objets sur une ligne
+  (Prettier les laisse ainsi s'ils tiennent dans la largeur), `test/manifest.test.js` vérifie < 80 Ko.
+
+**date-holidays**
+
+- Une **subdivision inconnue est ignorée en silence** (`init('FR', 'XX')` rend `true` et les fériés
+  nationaux) : la valider par `getStates()` / `getRegions()` avant.
+- Les entrées ont un `type` (`public`, `bank`, `school`, `optional`, `observance`) : le 15 août n'est
+  `public` en Bavière que pour la région `BY-KATH` ; le 24 décembre allemand est `bank` à partir de
+  14 h. Les fêtes lunaires durent parfois plusieurs jours (`end - start`) et commencent la veille au
+  soir (`date` avec un décalage `-0600`) : prendre la partie date de `date`, puis la durée arrondie
+  en jours.
+- Le chargement complet des données pèse environ 90 Mo de RSS avec Node : correct pour 256 Mo.
+
+**API du calendrier scolaire (`fr-en-calendrier-scolaire`)**
+
+- Une ligne par académie : grouper (`group_by` sur toutes les colonnes lues).
+- Les dates sont des **minuits de Paris** en UTC (22:00 ou 23:00Z), quelle que soit la zone : les
+  convertir en date de Paris.
+- `end_date` est le **jour de reprise**, sauf pour une période d'un jour où `start_date` =
+  `end_date` (pont de l'Ascension 2027).
+- L'été apparaît deux fois (`population` « Enseignants » et « Élèves ») ; la Guadeloupe a des lignes
+  pour une partie de zone (Saint-Martin, Saint-Barthélemy) : ne garder que « - » et « Élèves ».
+- Le dernier été publié peut être une ligne « Début des Vacances d'Été » d'un jour, fin inconnue :
+  les données couvrent jusqu'à sa veille.
+- Nouvelle-Calédonie, Wallis-et-Futuna et Polynésie ont d'autres conventions (fin un dimanche,
+  marqueurs « Début des… », plusieurs populations) : non proposées.
+- Un filtre `where` sur `annee_scolaire` (texte) avec `>=` est refusé ; sur `end_date`, une chaîne
+  `"2026-10-05"` passe.

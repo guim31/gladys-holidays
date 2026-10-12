@@ -1,61 +1,157 @@
-# Demo Devices Template
+# Holidays & Workdays
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Is today a holiday, a workday, or a day of the school holidays? This integration answers for your scenes:
+the alarm clock, the heating and the shutters no longer behave the same on a holiday, at the weekend or
+during the holidays.
 
-## What you get
+- **Public holidays of about 200 countries** and of their regions (Alsace-Moselle, German states, Swiss
+  cantons, Canadian provinces, US states…), computed **offline** on your Gladys: no account, no network.
+- **Workdays**: the days of the week you work, minus the holidays, plus your bridges and days off.
+- **French school holidays** of your zone (optional), from the open data of the French Education ministry.
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+> Tested with its automated test suite, not yet on many real Gladys instances: feedback welcome on the
+> Gladys forum or in the GitHub issues.
+
+## What you need
+
+- Gladys Assistant 5.1.0 or later.
+- Nothing else: no account, no API key, no hardware. Only the French school holidays need Internet access,
+  once a day.
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+Install the integration (**Integrations → Install from GitHub**, address
+`https://github.com/guim31/gladys-holidays`), open its **Configuration** tab, fill in the fields below and
+save. Then open the **Discover** tab and add the calendar device.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+### Country and subdivision
 
-## Actions
+- **Country**: the calendar to follow. French-speaking countries come first, then the others in
+  alphabetical order (in English).
+- **Subdivision**: optional, for a region with holidays of its own. Examples: `67`, `68` or `57` for
+  Alsace-Moselle (Good Friday and 26 December), `BY` for Bavaria, `BE` for Berlin, `QC` for Quebec, `VD`
+  for the canton of Vaud, `NY` for New York. Some subdivisions have regions: `BY-KATH` for the Catholic
+  municipalities of Bavaria (15 August), `BY-A` for Augsburg. The **Check the configuration** button lists
+  the codes of the country.
+- **Days counted as holidays**: public holidays only by default. You can add bank holidays (Christmas Eve
+  afternoon in Germany), local school days off, optional days and observances (Mother's Day, Whit Sunday…).
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+### Workdays, extra days off and holidays you work
 
-## Scenes
+- **Workdays**: Monday to Friday by default. A workday is one of these days that is not a holiday.
+- **Extra days off**: bridges or company days off, counted as holidays, separated by commas:
+  `2026-05-15` for one date, `12-24` for every year, with an optional name after `=`:
+  `2026-05-15=Bridge, 12-24=Christmas Eve`.
+- **Holidays you work**: holidays that stay workdays, separated by commas. A name in any language
+  (`Whit Monday` or `Lundi de Pentecôte` for the French solidarity day, whatever its date), a date
+  (`2027-05-17`) or a day of every year (`12-26`).
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+### French school holidays
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+For France and its overseas territories (countries France, Guadeloupe, French Guiana, Martinique,
+Réunion, Mayotte, Saint Pierre and Miquelon, Saint Barthélemy, Saint Martin). Pick your **zone**: A, B, C,
+Corsica, Guadeloupe, French Guiana, Martinique, Mayotte, Réunion or Saint Pierre and Miquelon. The
+holidays of the pupils are read once a day from data.education.gouv.fr, then kept: a cut of the Internet
+access changes nothing to the days already known. Leave **None** to keep the integration fully offline.
 
-## Dashboard
+### Language
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+French by default. Language of the device and feature names (set when the device is added: change it before), of the
+holiday names when the library has them in that language (otherwise the official language of the
+country), and of the texts sent to scenes. The dashboard widget follows the language of each user.
+
+## The calendar device
+
+One device per country, **Calendar France** for example. Its features can be read on the dashboard and,
+above all, used in scene conditions:
+
+| Feature                  | Value                                                          |
+| ------------------------ | -------------------------------------------------------------- |
+| Holiday today            | On / Off                                                       |
+| Holiday tomorrow         | On / Off                                                       |
+| Workday today            | On / Off                                                       |
+| Workday tomorrow         | On / Off                                                       |
+| School holidays today    | On / Off (only with a zone)                                    |
+| School holidays tomorrow | On / Off (only with a zone)                                    |
+| Days until next holiday  | 0 on a holiday                                                 |
+| Days until next workday  | 0 on a workday, 3 on the Friday evening of a long weekend…     |
+| Next holiday             | Name of today's holiday, or of the next one                    |
+| Today                    | "Workday", "Day off" or the name of the holiday, with holidays |
+
+Everything switches at **midnight, in the time zone of Gladys** (summer and winter time included), and
+every value is sent again each day, so Gladys never shows it as outdated. A school-holiday value beyond
+what the ministry has published is not sent rather than guessed.
+
+Choosing a school zone later adds two features: click **Update** on the device in the Discover tab.
+
+## Dashboard widget
+
+**Upcoming holidays** (in **Edit dashboard**, integration widgets): today and tomorrow (workday, holiday,
+day off), the school today when a zone is set, then the next holidays and school holidays with the days
+left. Tap a school holiday to see its dates and the return to school. Settings: the number of dates
+listed (1 to 8), and whether to show the school holidays.
+
+## Scene triggers
+
+Each trigger has an **Hour** (0 to 23): the scene runs at that hour of the day concerned, once. The
+variables can be inserted in the texts of the following actions (a message, for instance).
+
+| Trigger                         | When                                                 | Variables                                          |
+| ------------------------------- | ---------------------------------------------------- | -------------------------------------------------- |
+| Holiday                         | On each holiday (0: as it begins, at midnight)       | Holiday name, date                                 |
+| Day before a holiday            | The day before each holiday                          | Holiday name, date, days off in a row              |
+| School holidays start           | On the first day of the school holidays of your zone | Name of the holidays, last day off, back to school |
+| Last day of the school holidays | On the last day off, the eve of the return to school | Name of the holidays, last day off, back to school |
+
+The device already tells **whether** a day is a holiday; these triggers add the **moment** and the
+**names**: "tomorrow is Ascension, 4 days off in a row".
+
+## Scene action "Check a date"
+
+Gives the answers for today (0), tomorrow (1) or any day of the coming year (up to 366): **Workday**,
+**Holiday** and **School holidays** (1 = yes, 0 = no, -1 = unknown: no zone, or beyond the published
+calendar), the **holiday name**, the **name of the school holidays** and the **date**. Follow it with a
+**Condition on variables** on one of these results, for example "Workday = 1".
+
+## Scene examples
+
+- **Alarm clock only on workdays**: scheduled trigger at 6:45, Condition on variables "Calendar France:
+  Workday today = On", then turn on the bedroom light and open the shutters.
+- **Heating for a long weekend**: trigger Day before a holiday at 18:00, then send the message "Tomorrow is
+  {{holiday name}}: {{days off in a row}} days off" and set the thermostat to its weekend mode.
+- **Back to school**: trigger Last day of the school holidays at 19:00, then the message "Back to school on
+  {{back to school}}: check the alarm clock".
+- **Planning ahead**: every Friday at 18:00, action Check a date with 3 days, Condition on variables
+  "Workday = 0", then lower the heating for Monday too.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **No device in the Discover tab**: save the configuration first, then click **Scan**.
+- **A regional holiday is missing**: check the subdivision with **Check the configuration**; the status of
+  the integration says when a code is unknown (the national holidays are used meanwhile).
+- **School holidays stay empty**: the integration reads data.education.gouv.fr at most once a day and
+  retries six hours after a failure; the status of the integration says when nothing could be read yet.
+  Your zone, not your académie, is asked: Bordeaux is in zone A, Paris in zone C.
+- **The feature names are in the wrong language**: they are set when the device is added. Delete the
+  device, change the language, then add it again (its history is lost).
+- **A trigger fires 24 times**: set its **Hour**; it is required in the scene editor.
+
+## Limits
+
+- Holidays come from the date-holidays library: a holiday decided late by a government (an exceptional
+  day off) arrives with an update of the integration; add it meanwhile in **Extra days off**.
+- Islamic and other lunar holidays are computed, and can differ by a day from the official announcement.
+- One country per installation: a second calendar (for a cross-border worker) is not supported; its
+  holidays can be added in **Extra days off**.
+- French school holidays: pupils' calendar only (not the teachers'); Nouvelle-Calédonie, Polynésie
+  française and Wallis-et-Futuna are not offered, and the days of a part of a zone (Saint-Martin in the
+  Guadeloupe zone) are not taken into account.
+- After a restart, the trigger hour just begun is fired if the integration is back within 10 minutes;
+  later, it is skipped rather than fired at the wrong time.
+
+## Credits
+
+Holidays: [date-holidays](https://github.com/commenthol/date-holidays) by commenthol (ISC licence, data
+under CC BY 3.0). School holidays: [Calendrier scolaire](https://data.education.gouv.fr/explore/dataset/fr-en-calendrier-scolaire/),
+French Education ministry (Licence Ouverte 2.0). Inspired by the Workday and Holiday integrations of Home
+Assistant. Not affiliated with the French Education ministry nor with Home Assistant.
