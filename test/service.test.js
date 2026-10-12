@@ -38,7 +38,7 @@ test('the day follows the time zone of Gladys, not UTC', async (t) => {
   // 4 July 2026 is a Saturday, observed on Friday 3 July. At 02:00 UTC on
   // 3 July, it is still 2 July in New York.
   const world = await createWorld({
-    config: { country: 'US' },
+    config: { country: 'US', language: 'en' },
     at: '2026-07-03T02:00:00Z',
     timeZone: 'America/New_York',
   });

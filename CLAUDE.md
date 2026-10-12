@@ -240,7 +240,9 @@ sont écrites, avec les mêmes sections.
   décalage de fuseau (`CALENDAR_DATE_REGEX` du front, depuis 5.1.0) ; une date-heure s'affiche avec
   l'heure.
 - Déclarer `transports: ["local", "cloud"]` fait afficher l'interrupteur « Préférer la connexion
-  locale » sur la page de configuration, même quand il n'a pas de sens : le dire dans la doc.
+  locale » sur la page de configuration, même quand il n'a pas de sens. Décision de Guilhem
+  (12/10/2026) : `["local"]` seul ici, les vacances scolaires restant une option qui lit l'open data
+  une fois par jour (dit dans la doc).
 - Le type `calendar` (5.2.0) pousserait des événements dans le calendrier de Gladys, mais il est
   **par utilisateur** et exclut les appareils : les conditions de scène sur un appareil (usage
   principal) imposent le type `device`.

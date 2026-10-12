@@ -61,12 +61,9 @@ damit die Integration vollständig offline bleibt.
 
 ### Sprache
 
-Sprache des Geräte- und Funktionsnamens (beim Hinzufügen des Geräts festgelegt: ändere sie vorher), der
+Standardmäßig Französisch. Sprache des Geräte- und Funktionsnamens (beim Hinzufügen des Geräts festgelegt: ändere sie vorher), der
 Feiertagsnamen, wenn die Bibliothek sie in dieser Sprache hat (sonst die Amtssprache des Landes), und der
 Texte für Szenen. Das Dashboard-Widget folgt der Sprache jeder Person.
-
-Der Schalter **Lokale (LAN-)Verbindung bevorzugen**, den Gladys auf der Konfigurationsseite zeigt, hat
-hier keine Wirkung.
 
 ## Das Kalendergerät
 

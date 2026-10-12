@@ -65,8 +65,9 @@ test('identity: name, image, cover, transports, category', () => {
     manifest.cover_image,
     'https://raw.githubusercontent.com/guim31/gladys-holidays/main/cover.png',
   );
-  // Holidays are computed locally; the French school holidays come from a cloud API.
-  assert.deepEqual(manifest.transports, ['local', 'cloud']);
+  // Holidays are computed locally; the optional French school holidays read an
+  // open-data API once a day, not enough to make a cloud integration of it.
+  assert.deepEqual(manifest.transports, ['local']);
   assert.deepEqual(manifest.categories, ['services']);
 });
 

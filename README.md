@@ -73,8 +73,6 @@ and [Spanish](docs/es.md).
 - One country per installation.
 - French school holidays: pupils only; Nouvelle-Calédonie, Polynésie française and Wallis-et-Futuna are
   not offered (their rows do not follow the conventions of the others), nor the days of a part of a zone.
-- Gladys shows a "Prefer local connection" switch because the integration declares both transports
-  (local holidays, cloud school holidays): it has no effect.
 
 ## Development
 

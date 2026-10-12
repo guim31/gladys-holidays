@@ -31,6 +31,7 @@ the notes of the version's GitHub Release.
 - Dashboard widget "Upcoming holidays".
 - "Check the configuration" button: the calendar in use, the next holiday, the school holidays read,
   what to fix and the subdivision codes of the country.
-- Texts and documentation in English, French, German and Spanish.
+- Texts and documentation in English, French, German and Spanish; device and feature names in
+  French by default.
 
 [Unreleased]: https://github.com/guim31/gladys-holidays/commits/main

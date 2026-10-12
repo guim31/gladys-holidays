@@ -13,7 +13,7 @@
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-holidays/main/cover.png",
   "categories": ["services"],
-  "transports": ["local", "cloud"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
@@ -1451,7 +1451,7 @@
         "es": "Idioma del nombre del dispositivo y de las funciones (fijados al añadirlo), de los nombres de los festivos cuando el país los tiene y de los textos enviados a las escenas."
       },
       "required": false,
-      "default": "en",
+      "default": "fr",
       "options": [
         {
           "value": "en",

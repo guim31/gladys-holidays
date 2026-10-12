@@ -49,7 +49,7 @@ export const DEFAULT_CONFIG = {
   extra_days: '',
   ignored_holidays: '',
   school_zone: 'none',
-  language: 'en',
+  language: 'fr',
 };
 
 /**

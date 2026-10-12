@@ -32,7 +32,7 @@ test('codes are normalized, unknown values replaced and reported', () => {
   assert.equal(config.country, 'FR');
   assert.deepEqual(config.problems, [{ key: 'unknownCountry', value: 'ZZ' }]);
   assert.equal(config.subdivision, 'BY');
-  assert.equal(config.language, 'en');
+  assert.equal(config.language, 'fr');
   assert.equal(config.school_zone, 'none');
   assert.deepEqual(config.holiday_types, ['public']);
 });

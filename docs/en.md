@@ -56,11 +56,9 @@ access changes nothing to the days already known. Leave **None** to keep the int
 
 ### Language
 
-Language of the device and feature names (set when the device is added: change it before), of the
+French by default. Language of the device and feature names (set when the device is added: change it before), of the
 holiday names when the library has them in that language (otherwise the official language of the
 country), and of the texts sent to scenes. The dashboard widget follows the language of each user.
-
-The **Prefer local (LAN) connection** switch Gladys shows on the configuration page has no effect here.
 
 ## The calendar device
 

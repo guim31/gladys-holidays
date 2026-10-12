@@ -61,12 +61,9 @@ rien aux jours déjà connus. Laissez **Aucune** pour que l'intégration reste e
 
 ### Langue
 
-Langue du nom de l'appareil et des fonctionnalités (figés à l'ajout de l'appareil : changez-la avant),
+Français par défaut. Langue du nom de l'appareil et des fonctionnalités (figés à l'ajout de l'appareil : changez-la avant),
 des noms des fériés quand la bibliothèque les a dans cette langue (sinon la langue officielle du pays), et
 des textes envoyés aux scènes. Le widget du tableau de bord suit la langue de chaque utilisateur.
-
-L'interrupteur **Préférer la connexion locale (LAN)** que Gladys affiche sur la page de configuration n'a
-pas d'effet ici.
 
 ## L'appareil calendrier
 

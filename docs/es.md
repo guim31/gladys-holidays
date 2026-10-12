@@ -61,12 +61,9 @@ conexión.
 
 ### Idioma
 
-Idioma del nombre del dispositivo y de las funciones (fijados al añadir el dispositivo: cámbielo antes),
+Francés por defecto. Idioma del nombre del dispositivo y de las funciones (fijados al añadir el dispositivo: cámbielo antes),
 de los nombres de los festivos cuando la biblioteca los tiene en ese idioma (si no, el idioma oficial del
 país) y de los textos enviados a las escenas. El widget del panel sigue el idioma de cada usuario.
-
-El interruptor **Preferir la conexión local (LAN)** que Gladys muestra en la página de configuración no
-tiene efecto aquí.
 
 ## El dispositivo calendario
 
