@@ -10,6 +10,13 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Changed
+
+- Quieter logs: the daily read of the school calendar and the clock no longer write anything in normal
+  operation, and a problem that repeats (Gladys unreachable, school calendar unavailable, `/data` not
+  writable) is written once, with one line when it is over. `LOG_LEVEL=debug` shows the details.
+- Dependencies updated.
+
 ## [1.0.0] - 2026-10-12
 
 ### Added

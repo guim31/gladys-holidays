@@ -17,6 +17,7 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 import { addDays, formatDate, localSlot, processTimeZone } from './dates.js';
 import { buildDevice, buildStates } from './device.js';
 import { HolidayCalendar } from './holidays.js';
+import { createFailureLog } from './failures.js';
 import { DAY_TEXT, PROBLEM_TEXT, inEveryLanguage } from './i18n.js';
 import { SchoolHolidays } from './school.js';
 
@@ -60,6 +61,8 @@ export class HolidayService {
     this.lastSlot = null;
     this.timer = null;
     this.queue = Promise.resolve();
+    // A failure repeated every minute or hour is logged once (src/failures.js).
+    this.failures = createFailureLog(logger);
   }
 
   // One operation at a time: a tick never interleaves with a reconfiguration.
@@ -148,7 +151,8 @@ export class HolidayService {
     const delay = 60_000 - (this.now() % 60_000) + 500;
     this.timer = setTimeout(() => {
       this.tick()
-        .catch((err) => logger.error('Clock tick failed', err))
+        .then(() => this.failures.succeeded('tick', 'The clock works again'))
+        .catch((err) => this.failures.failed('tick', 'Clock tick failed', err))
         .finally(() => this.schedule());
     }, delay);
     this.timer.unref?.();
@@ -259,8 +263,9 @@ export class HolidayService {
     const states = buildStates(this.gladys, this.config, this.snapshot());
     try {
       await this.gladys.publishChangedStates(states);
+      this.failures.succeeded('states', 'States published again');
     } catch (err) {
-      logger.warn(`Could not publish the states: ${err.message}`);
+      this.failures.failed('states', `Could not publish the states: ${err.message}`);
     }
   }
 
@@ -274,8 +279,9 @@ export class HolidayService {
           );
     try {
       await this.gladys.setConnectionStatus(problems.length === 0, message);
+      this.failures.succeeded('status', 'Status reported again');
     } catch (err) {
-      logger.warn(`Could not report the status: ${err.message}`);
+      this.failures.failed('status', `Could not report the status: ${err.message}`);
     }
   }
 
@@ -295,8 +301,9 @@ export class HolidayService {
     for (const event of this.events(slot)) {
       try {
         await this.gladys.publishSceneEvent(event.key, event.data);
+        this.failures.succeeded('scene-event', 'Scene triggers fired again');
       } catch (err) {
-        logger.warn(`Could not fire ${event.key}: ${err.message}`);
+        this.failures.failed('scene-event', `Could not fire ${event.key}: ${err.message}`);
       }
     }
   }

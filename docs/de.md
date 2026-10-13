@@ -145,6 +145,10 @@ das **Datum**. Lass ein **Nur fortsetzen, wenn** auf eines dieser Ergebnisse fol
 - **Die Funktionsnamen sind in der falschen Sprache**: Die Namen werden beim Hinzufügen des Geräts festgelegt.
   Lösche das Gerät, ändere die Sprache und füge es erneut hinzu (sein Verlauf geht verloren).
 - **Ein Auslöser löst 24-mal aus**: Stelle seine **Stunde** ein; der Szenen-Editor verlangt sie.
+- **Logs**: Die Integration schreibt nur ihren Start, die Probleme und deren Ende (ein Problem, das sich
+  wiederholt, steht nur einmal da). Für jeden einzelnen Schritt braucht der Container die
+  Umgebungsvariable `LOG_LEVEL=debug`, die Gladys nicht setzt: nützlich, wenn du das Image für einen Test
+  selbst startest.
 
 ## Grenzen
 

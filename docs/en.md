@@ -135,6 +135,9 @@ calendar), the **holiday name**, the **name of the school holidays** and the **d
 - **The feature names are in the wrong language**: they are set when the device is added. Delete the
   device, change the language, then add it again (its history is lost).
 - **A trigger fires 24 times**: set its **Hour**; it is required in the scene editor.
+- **Logs**: the integration logs only its start, the problems and their end (a problem that repeats is
+  written once). For the detail of each step, the container needs the environment variable
+  `LOG_LEVEL=debug`, which Gladys does not set: useful when you run the image yourself for a test.
 
 ## Limits
 

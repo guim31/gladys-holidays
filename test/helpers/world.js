@@ -76,6 +76,8 @@ export function createClock(iso) {
  * @param {object} [options.api] fakeEducationApi()
  * @param {object} [options.store] createMemoryStore()
  * @param {boolean} [options.connect] false: handlers registered, not started
+ * @param {boolean} [options.timers] true: the real clock of the service runs,
+ *   on Date.now and setTimeout (to mock with t.mock.timers)
  */
 export async function createWorld({
   config = {},
@@ -85,15 +87,16 @@ export async function createWorld({
   store = createMemoryStore(),
   devices = [],
   connect = true,
+  timers = false,
 } = {}) {
   const clock = createClock(at);
   const gladys = createFakeGladys({ config, devices });
   const app = registerHandlers(gladys, {
     store,
     fetch: api.fetch,
-    now: clock.now,
+    now: timers ? () => Date.now() : clock.now,
     timeZone,
-    timers: false,
+    timers,
   });
   if (connect) {
     await gladys.connect();
