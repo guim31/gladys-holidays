@@ -46,6 +46,7 @@ src/i18n.js                       every text of the code, en/fr/de/es
 src/dates.js                      'YYYY-MM-DD' arithmetic, local date and hour in a time zone
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
 src/store.js                      JSON files in /data (HOLIDAYS_DATA_DIR locally)
+src/failures.js                   repeated failures logged once (warn), their end once (info)
 scripts/countries.mjs             prints the country options of the manifest
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
 docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
@@ -121,6 +122,24 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   15000, 30000, 60000). Le template publie `poll_frequency: 300` sans `should_poll` : c'est faux,
   le cœur répond 400 à la découverte. Pour une cadence hors liste, publier `should_poll: false` et
   pousser les états depuis le conteneur, en gardant un `onPoll` de repli.
+- **Piège du cœur 5.2.0** (GladysAssistant/Gladys#3198, correctif #3199 pas encore publié) : un
+  appareil créé **sans** `should_poll: true` n'est **jamais** sondé, et les appareils déjà créés ne le
+  seront pas davantage après la correction (le champ est enregistré à la création). Ne jamais compter sur
+  `onPoll` seul. Ici, le calendrier publie `should_poll: false` et tout part du minuteur de
+  `src/service.js` (minuit local, heures des déclencheurs, lecture du calendrier scolaire) :
+  `test/logs.test.js` le vérifie avec de faux minuteurs, sans aucun appel de Gladys. Pas d'`onPoll` du
+  tout : le cœur ne l'appellerait jamais pour cet appareil, et le passer en `should_poll: true` (60 s au
+  plus lent) ne ferait que republier toutes les minutes ce qui change une fois par jour.
+
+**Journaux**
+
+- Le logger du SDK lit `LOG_LEVEL` (`debug` | `info` | `warn` | `error` | `silent`, `info` par défaut)
+  à chaque ligne. Gladys ne le pose pas : en production, c'est `info`.
+- En `info`, seulement le cycle de vie : démarrage, arrêt, première lecture du calendrier scolaire,
+  erreurs utiles et leur fin. Rien par minute, par heure, par état ni par lecture quotidienne (`debug`).
+- Une erreur qui se répète passe par `createFailureLog` (`src/failures.js`) : un `warn` au premier
+  échec, `debug` ensuite, un `info` au rétablissement. `test/logs.test.js` vérifie qu'une journée
+  normale n'écrit rien en `info` et qu'une panne n'écrit qu'une ligne.
 - **`min` et `max` sont NOT NULL** dans `t_device_feature`, y compris pour `text/text` : sans eux,
   « Ajouter à Gladys » échoue en HTTP 422. Mettre 0/0, comme Zigbee2MQTT.
 - Un état publié sur une fonctionnalité **pas encore ajoutée** dans Gladys reçoit un 200 puis est

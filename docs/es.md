@@ -145,6 +145,10 @@ laborable = 1».
 - **Los nombres de las funciones están en otro idioma**: se fijan al añadir el dispositivo. Elimine el
   dispositivo, cambie el idioma y vuelva a añadirlo (se pierde su historial).
 - **Un activador se dispara 24 veces**: ajuste su **Hora**; el editor de escenas la exige.
+- **Registros**: la integración solo escribe su inicio, los problemas y su final (un problema que se
+  repite se escribe una sola vez). Para el detalle de cada paso, el contenedor necesita la variable de
+  entorno `LOG_LEVEL=debug`, que Gladys no define: útil cuando usted mismo ejecuta la imagen para una
+  prueba.
 
 ## Límites
 

@@ -10,6 +10,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '@gladysassistant/integration-sdk';
+import { createFailureLog } from './failures.js';
 
 const logger = createLogger({ name: 'store' });
 
@@ -18,14 +19,18 @@ export function defaultDataDir() {
 }
 
 export function createStore(dir = defaultDataDir()) {
+  // scheduler.json is written every hour: an unwritable /data warns once.
+  const failures = createFailureLog(logger);
   return {
     dir,
     load(name) {
       try {
-        return JSON.parse(readFileSync(path.join(dir, name), 'utf8'));
+        const value = JSON.parse(readFileSync(path.join(dir, name), 'utf8'));
+        failures.succeeded(`read:${name}`, `${name} read again`);
+        return value;
       } catch (err) {
         if (err.code !== 'ENOENT') {
-          logger.warn(`Could not read ${name}: ${err.message}`);
+          failures.failed(`read:${name}`, `Could not read ${name}: ${err.message}`);
         }
         return null;
       }
@@ -37,8 +42,9 @@ export function createStore(dir = defaultDataDir()) {
         const file = path.join(dir, name);
         writeFileSync(`${file}.tmp`, JSON.stringify(value));
         renameSync(`${file}.tmp`, file);
+        failures.succeeded(`write:${name}`, `${name} written again`);
       } catch (err) {
-        logger.warn(`Could not write ${name}: ${err.message}`);
+        failures.failed(`write:${name}`, `Could not write ${name}: ${err.message}`);
       }
     },
   };

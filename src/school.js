@@ -22,6 +22,7 @@
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { addDays, localSlot } from './dates.js';
 import { SCHOOL_ZONES, foldName } from './config.js';
+import { createFailureLog } from './failures.js';
 
 const logger = createLogger({ name: 'school-holidays' });
 
@@ -114,6 +115,9 @@ export class SchoolHolidays {
     this.data = null; // { zone, fetched_at, periods, covered_until }
     this.lastAttempt = 0;
     this.lastError = null;
+    // The first read of a zone is an info line, the daily ones are debug.
+    this.announced = false;
+    this.failures = createFailureLog(logger);
   }
 
   /** Switches to a zone key of SCHOOL_ZONES ('none' disables), loading the cache. */
@@ -125,6 +129,7 @@ export class SchoolHolidays {
     this.zone = zone;
     this.lastAttempt = 0;
     this.lastError = null;
+    this.announced = false;
     const cached = zone ? this.store.load('school-holidays.json') : null;
     this.data = cached?.zone === zone && Array.isArray(cached.periods) ? cached : null;
   }
@@ -181,11 +186,19 @@ export class SchoolHolidays {
       };
       this.lastError = null;
       this.store.save('school-holidays.json', this.data);
-      logger.info(`${zone}: ${periods.length} periods, until ${coveredUntil}`);
+      const summary = `${zone}: ${periods.length} periods, until ${coveredUntil}`;
+      if (this.failures.isFailing('read')) {
+        this.failures.succeeded('read', `School calendar read again (${summary})`);
+      } else if (this.announced) {
+        logger.debug(summary);
+      } else {
+        logger.info(summary);
+      }
+      this.announced = true;
       return true;
     } catch (err) {
       this.lastError = err.message;
-      logger.warn(`Could not read the school calendar of ${zone}: ${err.message}`);
+      this.failures.failed('read', `Could not read the school calendar of ${zone}: ${err.message}`);
       return false;
     }
   }

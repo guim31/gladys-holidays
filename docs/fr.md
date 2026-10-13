@@ -145,6 +145,10 @@ ou au-delà du calendrier publié), le **nom du jour férié**, le **nom des vac
   l'appareil. Supprimez l'appareil, changez la langue, puis ajoutez-le de nouveau (son historique est
   perdu).
 - **Un déclencheur part 24 fois** : réglez son **Heure** ; l'éditeur de scène l'exige.
+- **Journaux** : l'intégration n'écrit que son démarrage, les problèmes et leur fin (un problème qui se
+  répète n'est écrit qu'une fois). Pour le détail de chaque étape, le conteneur doit avoir la variable
+  d'environnement `LOG_LEVEL=debug`, que Gladys ne pose pas : utile quand vous lancez l'image vous-même
+  pour un test.
 
 ## Limites
 
