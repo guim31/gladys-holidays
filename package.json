@@ -1,6 +1,6 @@
 {
   "name": "gladys-holidays",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Gladys Assistant integration for public holidays, workdays and French school holidays.",
   "type": "module",
