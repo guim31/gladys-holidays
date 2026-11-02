@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@gladysassistant/integration-sdk": "^0.15.0",
-    "date-holidays": "^3.37.0"
+    "date-holidays": "^3.38.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
